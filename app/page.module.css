@@ -1,0 +1,317 @@
+.main {
+  min-height: 100vh;
+  padding: 2rem 1rem 4rem;
+}
+
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logoIcon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 1.25rem;
+}
+
+.sectionLabelSm {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 10px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.formRowThree {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 520px) {
+  .formRow, .formRowThree { grid-template-columns: 1fr; }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.select, .input {
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.select:focus, .input:focus {
+  border-color: var(--text-muted);
+}
+
+.analyzeBtn {
+  width: 100%;
+  padding: 12px;
+  background: var(--text);
+  color: var(--surface);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.analyzeBtn:hover:not(:disabled) { opacity: 0.85; }
+.analyzeBtn:active:not(:disabled) { transform: scale(0.99); }
+.analyzeBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.errorBox {
+  background: var(--red-bg);
+  border: 0.5px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--red-text);
+  margin-bottom: 1rem;
+}
+
+.loadingState {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.loadingDots {
+  display: inline-flex;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.loadingDots span {
+  width: 7px;
+  height: 7px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+
+.loadingDots span:nth-child(2) { animation-delay: 0.2s; }
+.loadingDots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+.results { display: flex; flex-direction: column; }
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.metric {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.metricLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.metricValue {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.crowdBar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.crowdFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.aiSummary {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+
+.timeline {
+  display: flex;
+  gap: 4px;
+}
+
+.timeSlot {
+  flex: 1;
+  text-align: center;
+}
+
+.barWrap {
+  height: 56px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height 0.5s ease;
+}
+
+.barActive {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.timeLabel {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 5px;
+}
+
+.departGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.departOption {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.departBest {
+  border: 2px solid var(--green);
+}
+
+.departTime {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.departCrowd {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.badgeBest { background: var(--green-bg); color: var(--green-text); }
+.badgeOk   { background: var(--amber-bg); color: var(--amber-text); }
+.badgeBusy { background: var(--red-bg);   color: var(--red-text); }
+
+.tipItem {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--border);
+  align-items: flex-start;
+}
+
+.tipItem:last-child { border-bottom: none; padding-bottom: 0; }
+
+.tipIcon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+.tipText {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.tipDetail {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
