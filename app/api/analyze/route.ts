@@ -49,9 +49,9 @@ Return exactly this JSON structure with real values:
     {"time": "7:00 PM", "crowd": 40}
   ],
   "departureSuggestions": [
-    {"time": "4:15 PM", "crowd": 55, "tag": "best"},
-    {"time": "5:00 PM", "crowd": 85, "tag": "ok"},
-    {"time": "6:45 PM", "crowd": 45, "tag": "busy"}
+    {"time": "4:15 PM", "crowd": 55},
+    {"time": "5:00 PM", "crowd": 85},
+    {"time": "6:45 PM", "crowd": 45}
   ],
   "tips": [
     {"icon": "train", "tip": "Specific tip about this exact route", "detail": "Supporting detail"},
@@ -77,6 +77,12 @@ Fill in real values based on actual MTA patterns for this specific line, time, a
     if (!jsonMatch) throw new Error("No JSON in response");
 
     const data = JSON.parse(jsonMatch[0]);
+
+    // Sort by crowd score so lowest is always first (best option)
+    if (data.departureSuggestions) {
+      data.departureSuggestions.sort((a: { crowd: number }, b: { crowd: number }) => a.crowd - b.crowd);
+    }
+
     return NextResponse.json(data);
   } catch (err) {
     console.error("Analyze error:", err);
