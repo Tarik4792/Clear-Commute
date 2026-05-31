@@ -30,35 +30,37 @@ To: ${dest || "destination"}
 Depart: ${time} on ${day}
 Purpose: ${purpose}
 
+IMPORTANT: All times in your response must use 12-hour format with AM/PM (e.g. "4:30 PM", "8:15 AM"). Never use 24-hour military time.
+
 Return exactly this JSON structure with real values:
 {
-  "crowdScore": <integer 0-100>,
-  "crowdLabel": "<Light|Moderate|Busy|Very Crowded>",
-  "estimatedDuration": "<e.g. 28 min>",
-  "estimatedWait": "<e.g. 4 min>",
-  "aiSummary": "<2 sentences about crowd situation and best strategy for this specific route>",
+  "crowdScore": 75,
+  "crowdLabel": "Busy",
+  "estimatedDuration": "28 min",
+  "estimatedWait": "4 min",
+  "aiSummary": "Two sentences about crowd situation and best strategy for this specific route.",
   "timeline": [
-    {"time": "<HH:MM>", "crowd": <0-100>},
-    {"time": "<HH:MM>", "crowd": <0-100>},
-    {"time": "<HH:MM>", "crowd": <0-100>},
-    {"time": "<HH:MM>", "crowd": <0-100>},
-    {"time": "<HH:MM>", "crowd": <0-100>},
-    {"time": "<HH:MM>", "crowd": <0-100>},
-    {"time": "<HH:MM>", "crowd": <0-100>}
+    {"time": "4:00 PM", "crowd": 60},
+    {"time": "4:30 PM", "crowd": 75},
+    {"time": "5:00 PM", "crowd": 85},
+    {"time": "5:30 PM", "crowd": 90},
+    {"time": "6:00 PM", "crowd": 80},
+    {"time": "6:30 PM", "crowd": 60},
+    {"time": "7:00 PM", "crowd": 40}
   ],
   "departureSuggestions": [
-    {"time": "<HH:MM>", "crowd": <0-100>, "tag": "best"},
-    {"time": "<HH:MM>", "crowd": <0-100>, "tag": "ok"},
-    {"time": "<HH:MM>", "crowd": <0-100>, "tag": "busy"}
+    {"time": "4:15 PM", "crowd": 55, "tag": "best"},
+    {"time": "5:00 PM", "crowd": 85, "tag": "ok"},
+    {"time": "6:45 PM", "crowd": 45, "tag": "busy"}
   ],
   "tips": [
-    {"icon": "train", "tip": "<specific tip about this exact route>", "detail": "<supporting detail>"},
-    {"icon": "clock", "tip": "<timing insight for this line>", "detail": "<supporting detail>"},
-    {"icon": "map-pin", "tip": "<platform or car boarding tip>", "detail": "<supporting detail>"}
+    {"icon": "train", "tip": "Specific tip about this exact route", "detail": "Supporting detail"},
+    {"icon": "clock", "tip": "Timing insight for this line", "detail": "Supporting detail"},
+    {"icon": "map-pin", "tip": "Platform or car boarding tip", "detail": "Supporting detail"}
   ]
 }
 
-Base all values on real MTA patterns for this specific line, time, and day. The timeline should cover a 2-hour window around the departure time. Make tips highly specific to this route.`;
+Fill in real values based on actual MTA patterns for this specific line, time, and day. The timeline should cover a 2-hour window around the departure time. Make tips highly specific to this route. Remember: 12-hour time only.`;
 
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
