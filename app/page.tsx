@@ -32,6 +32,18 @@ const LINE_COLORS: Record<string, string> = {
 
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
+interface SavedProfile {
+  id: string;
+  name: string;
+  transit: string;
+  line: string;
+  origin: string;
+  dest: string;
+  time: string;
+  day: string;
+  purpose: string;
+}
+
 function to12Hour(time: string): string {
   const [hourStr, min] = time.split(":");
   const hour = parseInt(hourStr, 10);
@@ -101,11 +113,15 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [arrivals, setArrivals] = useState<ArrivalsResult | null>(null);
   const [error, setError] = useState("");
+  const [profiles, setProfiles] = useState<SavedProfile[]>([]);
+  const [saveMsg, setSaveMsg] = useState("");
 
   useEffect(() => {
     const now = new Date();
     setTime(`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
     setDay(DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1]);
+    const saved = localStorage.getItem("clearcommute_profiles");
+    if (saved) setProfiles(JSON.parse(saved));
   }, []);
 
   function handleTransitChange(val: string) {
@@ -113,7 +129,43 @@ export default function Home() {
     setLine(LINES[val][0]);
   }
 
-  async function analyze() {
+  function saveProfile() {
+    const name = `${TRANSIT_LABELS[transit].split(" ")[transit === "subway" ? 1 : 0]} ${line} · ${origin || "?"} → ${dest || "?"} · ${to12Hour(time)}`;
+    const profile: SavedProfile = {
+      id: Date.now().toString(),
+      name,
+      transit, line, origin, dest, time, day, purpose,
+    };
+    const updated = [profile, ...profiles].slice(0, 5);
+    setProfiles(updated);
+    localStorage.setItem("clearcommute_profiles", JSON.stringify(updated));
+    setSaveMsg("Saved!");
+    setTimeout(() => setSaveMsg(""), 2000);
+  }
+
+  function loadProfile(p: SavedProfile) {
+    setTransit(p.transit);
+    setLine(p.line);
+    setOrigin(p.origin);
+    setDest(p.dest);
+    setTime(p.time);
+    setDay(p.day);
+    setPurpose(p.purpose);
+    setResult(null);
+    setArrivals(null);
+    setTimeout(() => runAnalysis(p.transit, p.line, p.origin, p.dest, p.time, p.day, p.purpose), 100);
+  }
+
+  function deleteProfile(id: string) {
+    const updated = profiles.filter(p => p.id !== id);
+    setProfiles(updated);
+    localStorage.setItem("clearcommute_profiles", JSON.stringify(updated));
+  }
+
+  async function runAnalysis(
+    t: string, l: string, o: string, d: string,
+    tm: string, dy: string, pu: string
+  ) {
     setLoading(true);
     setError("");
     setResult(null);
@@ -123,13 +175,13 @@ export default function Home() {
         fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ transit, line, origin, dest, time, day, purpose }),
+          body: JSON.stringify({ transit: t, line: l, origin: o, dest: d, time: tm, day: dy, purpose: pu }),
         }).then(r => r.json()),
-        transit === "subway"
+        t === "subway"
           ? fetch("/api/arrivals", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ line, station: origin }),
+              body: JSON.stringify({ line: l, station: o }),
             }).then(r => r.json())
           : Promise.resolve(null),
       ]);
@@ -150,6 +202,10 @@ export default function Home() {
     }
   }
 
+  function analyze() {
+    runAnalysis(transit, line, origin, dest, time, day, purpose);
+  }
+
   const maxCrowd = result ? Math.max(...result.timeline.map((t) => t.crowd), 1) : 1;
 
   return (
@@ -164,6 +220,23 @@ export default function Home() {
             </div>
           </div>
         </header>
+
+        {profiles.length > 0 && (
+          <section className={styles.card}>
+            <h2 className={styles.sectionLabel}>My commutes</h2>
+            <div className={styles.profilesList}>
+              {profiles.map(p => (
+                <div key={p.id} className={styles.profileRow}>
+                  <button className={styles.profileBtn} onClick={() => loadProfile(p)}>
+                    <span className={styles.profileBullet} style={{ background: LINE_COLORS[p.line] || "#555" }}>{p.line}</span>
+                    <span className={styles.profileName}>{p.name}</span>
+                  </button>
+                  <button className={styles.profileDelete} onClick={() => deleteProfile(p.id)}>✕</button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className={styles.card}>
           <h2 className={styles.sectionLabel}>Plan your commute</h2>
@@ -212,9 +285,14 @@ export default function Home() {
               </select>
             </div>
           </div>
-          <button className={styles.analyzeBtn} onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing..." : "Analyze my commute →"}
-          </button>
+          <div className={styles.btnRow}>
+            <button className={styles.analyzeBtn} onClick={analyze} disabled={loading}>
+              {loading ? "Analyzing..." : "Analyze my commute →"}
+            </button>
+            <button className={styles.saveBtn} onClick={saveProfile} disabled={!origin && !dest}>
+              {saveMsg || "Save commute"}
+            </button>
+          </div>
         </section>
 
         {error && <div className={styles.errorBox}><strong>Error:</strong> {error}</div>}
