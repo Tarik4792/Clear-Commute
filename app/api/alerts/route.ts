@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const alerts: { header: string; description: string; effect: string }[] = [];
     for (const entity of feed.entity) {
       if (!entity.alert) continue;
-      const affects = entity.alert.informedEntity?.some((e: { routeId?: string }) => e.routeId?.toUpperCase() === line.toUpperCase());
+      const affects = entity.alert.informedEntity?.some((e: { routeId?: string | null }) => e.routeId?.toUpperCase() === line.toUpperCase());
       if (!affects) continue;
       const header = entity.alert.headerText?.translation?.[0]?.text || "";
       const description = entity.alert.descriptionText?.translation?.[0]?.text || "";
