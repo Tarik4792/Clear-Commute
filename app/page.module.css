@@ -315,3 +315,10 @@
   margin-top: 3px;
   line-height: 1.5;
 }
+
+.btnRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
