@@ -130,7 +130,7 @@ export default function Home() {
   }
 
   function saveProfile() {
-    const name = `${TRANSIT_LABELS[transit].split(" ")[transit === "subway" ? 1 : 0]} ${line} · ${origin || "?"} → ${dest || "?"} · ${to12Hour(time)}`;
+    const name = `${line} · ${origin || "?"} → ${dest || "?"} · ${to12Hour(time)}`;
     const profile: SavedProfile = {
       id: Date.now().toString(),
       name,
