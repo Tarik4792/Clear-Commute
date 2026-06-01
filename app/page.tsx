@@ -124,6 +124,13 @@ export default function Home() {
     if (saved) setProfiles(JSON.parse(saved));
   }, []);
 
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+  }, []);
+
   function handleTransitChange(val: string) {
     setTransit(val);
     setLine(LINES[val][0]);

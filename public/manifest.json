@@ -1,0 +1,18 @@
+{
+  "name": "ClearCommute",
+  "short_name": "ClearCommute",
+  "description": "AI-powered MTA crowd intelligence for smarter travel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a18",
+  "theme_color": "#1a1a18",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
