@@ -115,6 +115,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   const [saveMsg, setSaveMsg] = useState("");
+  const [weather, setWeather] = useState<{temperature:number;condition:string;isRaining:boolean;isSnowing:boolean;isStormy:boolean;isClear:boolean} | null>(null);
 
   useEffect(() => {
     const now = new Date();
