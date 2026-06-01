@@ -123,6 +123,7 @@ export default function Home() {
     setDay(DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1]);
     const saved = localStorage.getItem("clearcommute_profiles");
     if (saved) setProfiles(JSON.parse(saved));
+    fetch("/api/weather").then(r => r.json()).then(d => { if (d.temperature) setWeather(d); });
   }, []);
 
 
