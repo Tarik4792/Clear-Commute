@@ -1,4 +1,4 @@
-const CACHE = "clearcommute-v1";
+const CACHE = "clearcommute-v2";
 const STATIC = ["/", "/manifest.json"];
 
 self.addEventListener("install", e => {
@@ -25,4 +25,29 @@ self.addEventListener("fetch", e => {
       })
       .catch(() => caches.match(e.request))
   );
+});
+
+// Handle push notifications
+self.addEventListener("push", e => {
+  const data = e.data?.json() || {};
+  const title = data.title || "ClearCommute";
+  const options = {
+    body: data.body || "Check your commute",
+    icon: data.icon || "/icons/icon.svg",
+    badge: "/icons/icon.svg",
+    vibrate: [100, 50, 100],
+    data: { url: "/" },
+    actions: [
+      { action: "open", title: "View commute" },
+      { action: "dismiss", title: "Dismiss" }
+    ]
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Handle notification click
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  if (e.action === "dismiss") return;
+  e.waitUntil(clients.openWindow(e.notification.data?.url || "/"));
 });

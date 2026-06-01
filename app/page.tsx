@@ -32,18 +32,6 @@ const LINE_COLORS: Record<string, string> = {
 
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
-interface SavedProfile {
-  id: string;
-  name: string;
-  transit: string;
-  line: string;
-  origin: string;
-  dest: string;
-  time: string;
-  day: string;
-  purpose: string;
-}
-
 function to12Hour(time: string): string {
   const [hourStr, min] = time.split(":");
   const hour = parseInt(hourStr, 10);
@@ -66,10 +54,10 @@ function crowdLabel(pct: number) {
   return "Very Crowded";
 }
 
-function getBadgeClass(pct: number, isFirst: boolean, s: Record<string,string>) {
-  if (isFirst) return s.badgeBest;
-  if (pct < 70) return s.badgeOk;
-  return s.badgeBusy;
+function badgeStyle(pct: number, styles: Record<string, string>) {
+  if (pct < 40) return styles.badgeBest;
+  if (pct < 70) return styles.badgeOk;
+  return styles.badgeBusy;
 }
 
 interface Arrival {
@@ -93,7 +81,7 @@ interface AnalysisResult {
   estimatedWait: string;
   aiSummary: string;
   timeline: { time: string; crowd: number }[];
-  departureSuggestions: { time: string; crowd: number }[];
+  departureSuggestions: { time: string; crowd: number; tag: string }[];
   tips: { icon: string; tip: string; detail: string }[];
 }
 
@@ -113,24 +101,11 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [arrivals, setArrivals] = useState<ArrivalsResult | null>(null);
   const [error, setError] = useState("");
-  const [profiles, setProfiles] = useState<SavedProfile[]>([]);
-  const [saveMsg, setSaveMsg] = useState("");
-  const [weather, setWeather] = useState<{temperature:number;condition:string;isRaining:boolean;isSnowing:boolean;isStormy:boolean;isClear:boolean} | null>(null);
 
   useEffect(() => {
     const now = new Date();
     setTime(`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
     setDay(DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1]);
-    const saved = localStorage.getItem("clearcommute_profiles");
-    if (saved) setProfiles(JSON.parse(saved));
-    fetch("/api/weather").then(r => r.json()).then(d => { if (d.temperature) setWeather(d); });
-  }, []);
-
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(console.error);
-    }
   }, []);
 
   function handleTransitChange(val: string) {
@@ -138,62 +113,28 @@ export default function Home() {
     setLine(LINES[val][0]);
   }
 
-  function saveProfile() {
-    const name = `${line} · ${origin || "?"} → ${dest || "?"} · ${to12Hour(time)}`;
-    const profile: SavedProfile = {
-      id: Date.now().toString(),
-      name,
-      transit, line, origin, dest, time, day, purpose,
-    };
-    const updated = [profile, ...profiles].slice(0, 5);
-    setProfiles(updated);
-    localStorage.setItem("clearcommute_profiles", JSON.stringify(updated));
-    setSaveMsg("Saved!");
-    setTimeout(() => setSaveMsg(""), 2000);
-  }
-
-  function loadProfile(p: SavedProfile) {
-    setTransit(p.transit);
-    setLine(p.line);
-    setOrigin(p.origin);
-    setDest(p.dest);
-    setTime(p.time);
-    setDay(p.day);
-    setPurpose(p.purpose);
-    setResult(null);
-    setArrivals(null);
-    setTimeout(() => runAnalysis(p.transit, p.line, p.origin, p.dest, p.time, p.day, p.purpose), 100);
-  }
-
-  function deleteProfile(id: string) {
-    const updated = profiles.filter(p => p.id !== id);
-    setProfiles(updated);
-    localStorage.setItem("clearcommute_profiles", JSON.stringify(updated));
-  }
-
-  async function runAnalysis(
-    t: string, l: string, o: string, d: string,
-    tm: string, dy: string, pu: string
-  ) {
+  async function analyze() {
     setLoading(true);
     setError("");
     setResult(null);
     setArrivals(null);
+
     try {
       const [analysisRes, arrivalsRes] = await Promise.allSettled([
         fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ transit: t, line: l, origin: o, dest: d, time: tm, day: dy, purpose: pu }),
+          body: JSON.stringify({ transit, line, origin, dest, time, day, purpose }),
         }).then(r => r.json()),
-        t === "subway"
+        transit === "subway"
           ? fetch("/api/arrivals", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ line: l, station: o }),
+              body: JSON.stringify({ line, station: origin }),
             }).then(r => r.json())
           : Promise.resolve(null),
       ]);
+
       if (analysisRes.status === "fulfilled") {
         const data = analysisRes.value;
         if (data.error) throw new Error(data.error);
@@ -201,6 +142,7 @@ export default function Home() {
       } else {
         throw new Error("Analysis failed");
       }
+
       if (arrivalsRes.status === "fulfilled" && arrivalsRes.value) {
         setArrivals(arrivalsRes.value);
       }
@@ -209,10 +151,6 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function analyze() {
-    runAnalysis(transit, line, origin, dest, time, day, purpose);
   }
 
   const maxCrowd = result ? Math.max(...result.timeline.map((t) => t.crowd), 1) : 1;
@@ -225,30 +163,10 @@ export default function Home() {
             <span className={styles.logoIcon}>🚇</span>
             <div>
               <h1 className={styles.title}>ClearCommute</h1>
-              <p className={styles.subtitle}>
-                AI-powered MTA crowd intelligence • Live arrivals
-                {weather && <span className={styles.weatherBadge}>{weather.isRaining ? '🌧️' : weather.isSnowing ? '❄️' : weather.isStormy ? '⛈️' : weather.isClear ? '☀️' : '🌤️'} {weather.temperature}°F · {weather.condition}</span>}
-              </p>
+              <p className={styles.subtitle}>AI-powered MTA crowd intelligence • Live arrivals</p>
             </div>
           </div>
         </header>
-
-        {profiles.length > 0 && (
-          <section className={styles.card}>
-            <h2 className={styles.sectionLabel}>My commutes</h2>
-            <div className={styles.profilesList}>
-              {profiles.map(p => (
-                <div key={p.id} className={styles.profileRow}>
-                  <button className={styles.profileBtn} onClick={() => loadProfile(p)}>
-                    <span className={styles.profileBullet} style={{ background: LINE_COLORS[p.line] || "#555" }}>{p.line}</span>
-                    <span className={styles.profileName}>{p.name}</span>
-                  </button>
-                  <button className={styles.profileDelete} onClick={() => deleteProfile(p.id)}>✕</button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         <section className={styles.card}>
           <h2 className={styles.sectionLabel}>Plan your commute</h2>
@@ -266,6 +184,7 @@ export default function Home() {
               </select>
             </div>
           </div>
+
           <div className={styles.formRowThree}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Origin station</label>
@@ -280,6 +199,7 @@ export default function Home() {
               <input className={styles.input} type="time" value={time} onChange={e => setTime(e.target.value)} />
             </div>
           </div>
+
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Day</label>
@@ -297,14 +217,10 @@ export default function Home() {
               </select>
             </div>
           </div>
-          <div className={styles.btnRow}>
-            <button className={styles.analyzeBtn} onClick={analyze} disabled={loading}>
-              {loading ? "Analyzing..." : "Analyze my commute →"}
-            </button>
-            <button className={styles.saveBtn} onClick={saveProfile} disabled={!origin && !dest}>
-              {saveMsg || "Save commute"}
-            </button>
-          </div>
+
+          <button className={styles.analyzeBtn} onClick={analyze} disabled={loading}>
+            {loading ? "Analyzing..." : "Analyze my commute →"}
+          </button>
         </section>
 
         {error && <div className={styles.errorBox}><strong>Error:</strong> {error}</div>}
@@ -324,15 +240,23 @@ export default function Home() {
               Live arrivals — {line} at {origin || "your station"}
               <span className={styles.liveBadge}>● LIVE</span>
             </h2>
-            {!arrivals.stopFound && <p className={styles.mutedNote}>{arrivals.message || "Station not found in database."}</p>}
-            {arrivals.stopFound && arrivals.arrivals.length === 0 && <p className={styles.mutedNote}>No upcoming trains in the next 60 minutes.</p>}
+            {!arrivals.stopFound && (
+              <p className={styles.mutedNote}>{arrivals.message || "Station not found in database."}</p>
+            )}
+            {arrivals.stopFound && arrivals.arrivals.length === 0 && (
+              <p className={styles.mutedNote}>No upcoming trains in the next 60 minutes.</p>
+            )}
             {arrivals.stopFound && arrivals.arrivals.length > 0 && (
               <div className={styles.arrivalsList}>
                 {arrivals.arrivals.map((arr, i) => (
                   <div key={i} className={styles.arrivalRow}>
-                    <span className={styles.lineBullet} style={{ background: LINE_COLORS[arr.line] || "#555" }}>{arr.line}</span>
+                    <span className={styles.lineBullet} style={{ background: LINE_COLORS[arr.line] || "#555" }}>
+                      {arr.line}
+                    </span>
                     <span className={styles.arrivalDir}>{arr.direction}</span>
-                    <span className={styles.arrivalTime}>{arr.minutes === 0 ? "Now" : `${arr.minutes} min`}</span>
+                    <span className={styles.arrivalTime}>
+                      {arr.minutes === 0 ? "Now" : `${arr.minutes} min`}
+                    </span>
                     <div className={styles.arrivalBar} style={{
                       width: `${Math.min(100, (arr.minutes / 15) * 100)}%`,
                       background: arr.minutes <= 2 ? "var(--green)" : arr.minutes <= 8 ? "var(--amber)" : "var(--border-strong)",
@@ -351,7 +275,9 @@ export default function Home() {
               <div className={styles.metricGrid}>
                 <div className={styles.metric}>
                   <div className={styles.metricLabel}>Crowd level</div>
-                  <div className={styles.metricValue} style={{ color: crowdColor(result.crowdScore) }}>{result.crowdScore}%</div>
+                  <div className={styles.metricValue} style={{ color: crowdColor(result.crowdScore) }}>
+                    {result.crowdScore}%
+                  </div>
                 </div>
                 <div className={styles.metric}>
                   <div className={styles.metricLabel}>Est. duration</div>
@@ -362,10 +288,13 @@ export default function Home() {
                   <div className={styles.metricValue}>{result.estimatedWait}</div>
                 </div>
               </div>
+
               <div className={styles.crowdBar}>
                 <div className={styles.crowdFill} style={{ width: `${result.crowdScore}%`, background: crowdColor(result.crowdScore) }} />
               </div>
+
               <p className={styles.aiSummary}>{result.aiSummary}</p>
+
               <h3 className={styles.sectionLabelSm}>Crowd pattern — 2 hour window</h3>
               <div className={styles.timeline}>
                 {result.timeline.map((slot, i) => {
@@ -392,7 +321,7 @@ export default function Home() {
                     <div className={styles.departCrowd} style={{ color: crowdColor(dep.crowd) }}>
                       {crowdLabel(dep.crowd)}
                     </div>
-                    <div className={`${styles.badge} ${getBadgeClass(dep.crowd, i === 0, styles)}`}>
+                    <div className={`${styles.badge} ${badgeStyle(dep.crowd, styles)}`}>
                       {i === 0 ? "✓ Recommended" : crowdLabel(dep.crowd)}
                     </div>
                   </div>
