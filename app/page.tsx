@@ -223,7 +223,15 @@ export default function Home() {
             <span className={styles.logoIcon}>🚇</span>
             <div>
               <h1 className={styles.title}>ClearCommute</h1>
-              <p className={styles.subtitle}>AI-powered MTA crowd intelligence • Live arrivals</p>
+              <p className={styles.subtitle}>
+              AI-powered MTA crowd intelligence • Live arrivals
+              {weather && (
+                <span className={styles.weatherBadge}>
+                  {weather.isRaining ? "🌧️" : weather.isSnowing ? "❄️" : weather.isStormy ? "⛈️" : weather.isClear ? "☀️" : "🌤️"}
+                  {" "}{weather.temperature}°F · {weather.condition}
+                </span>
+              )}
+            </p>
             </div>
           </div>
         </header>
