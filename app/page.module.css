@@ -327,3 +327,11 @@
   gap: 8px;
   margin-top: 4px;
 }
+
+/* Weather badge */
+.weatherBadge {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}

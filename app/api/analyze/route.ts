@@ -6,7 +6,7 @@ const client = new Anthropic();
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { transit, line, origin, dest, time, day, purpose } = body;
+    const { transit, line, origin, dest, time, day, purpose, weather } = body;
 
     if (!transit || !line || !time || !day) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -29,6 +29,20 @@ From: ${origin || "origin station"}
 To: ${dest || "destination"}
 Depart: ${time} on ${day}
 Purpose: ${purpose}
+
+CURRENT WEATHER IN NYC: ${weather ? `${weather.temperature}°F, ${weather.condition}, precipitation: ${weather.precipitation}in` : 'Unknown'}
+${weather?.isRaining ? 'NOTE: It is currently raining — expect 15-25% higher ridership as people avoid walking.' : ''}
+${weather?.isSnowing ? 'NOTE: It is snowing — expect 20-35% higher ridership and significant delays.' : ''}
+${weather?.isStormy ? 'NOTE: There is a thunderstorm — expect severe crowding and possible service disruptions.' : ''}
+${weather?.temperature < 20 ? 'NOTE: Extreme cold — expect higher ridership as people avoid walking.' : ''}
+${weather?.temperature > 90 ? 'NOTE: Extreme heat — expect higher ridership as people seek air conditioning.' : ''}
+
+CURRENT WEATHER IN NYC: ${weather ? `${weather.temperature}°F, ${weather.condition}, precipitation: ${weather.precipitation}in` : 'Unknown'}
+${weather?.isRaining ? 'NOTE: It is currently raining — expect 15-25% higher ridership as people avoid walking.' : ''}
+${weather?.isSnowing ? 'NOTE: It is snowing — expect 20-35% higher ridership and significant delays.' : ''}
+${weather?.isStormy ? 'NOTE: There is a thunderstorm — expect severe crowding and possible service disruptions.' : ''}
+${weather?.temperature < 20 ? 'NOTE: Extreme cold — expect higher ridership as people avoid walking.' : ''}
+${weather?.temperature > 90 ? 'NOTE: Extreme heat — expect higher ridership as people seek air conditioning.' : ''}
 
 IMPORTANT: All times in your response must use 12-hour format with AM/PM (e.g. "4:30 PM", "8:15 AM"). Never use 24-hour military time.
 
