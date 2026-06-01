@@ -217,10 +217,15 @@
 .timeline {
   display: flex;
   gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
+.timeline::-webkit-scrollbar { display: none; }
+
 .timeSlot {
-  flex: 1;
+  flex: 0 0 72px;
   text-align: center;
 }
 
