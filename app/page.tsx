@@ -182,8 +182,17 @@ export default function Home() {
                 {weather && <span className={styles.weatherBadge}>{weather.isRaining ? "🌧️" : weather.isSnowing ? "❄️" : weather.isStormy ? "⛈️" : weather.isClear ? "☀️" : "🌤️"} {weather.temperature}°F · {weather.condition}</span>}
               </p>
             </div>
-            <button className={styles.notifBtn} onClick={subscribeToNotifications}
-              title={notifStatus === "granted" ? "Notifications on" : "Enable notifications"}>
+            <button
+              className={styles.notifBtn}
+              onClick={() => {
+                if (notifStatus === "granted") {
+                  alert("To turn off notifications, go to your browser settings and block notifications for clearcommute.vercel.app");
+                } else {
+                  subscribeToNotifications();
+                }
+              }}
+              title={notifStatus === "granted" ? "Notifications on — click for settings" : "Enable notifications"}
+            >
               {notifStatus === "granted" ? "🔔" : "🔕"}
             </button>
           </div>
