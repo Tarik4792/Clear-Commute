@@ -23,7 +23,8 @@ const LINE_COLORS: Record<string, string> = {
   "7":"#B933AD",
   "A":"#0039A6","C":"#0039A6","E":"#0039A6",
   "B":"#FF6319","D":"#FF6319","F":"#FF6319","M":"#FF6319",
-  "G":"#6CBE45","J":"#996633","Z":"#996633",
+  "G":"#6CBE45",
+  "J":"#996633","Z":"#996633",
   "L":"#A7A9AC",
   "N":"#FCCC0A","Q":"#FCCC0A","R":"#FCCC0A","W":"#FCCC0A",
   "S":"#808183",
@@ -32,18 +33,30 @@ const LINE_COLORS: Record<string, string> = {
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
 interface SavedProfile {
-  id: string; name: string; transit: string; line: string;
-  origin: string; dest: string; time: string; day: string; purpose: string;
+  id: string;
+  name: string;
+  transit: string;
+  line: string;
+  origin: string;
+  dest: string;
+  time: string;
+  day: string;
+  purpose: string;
 }
-interface ServiceAlert { header: string; description: string; effect: string; }
-interface Weather { temperature: number; condition: string; isRaining: boolean; isSnowing: boolean; isStormy: boolean; isClear: boolean; }
-interface Arrival { line: string; minutes: number; direction: string; destination: string; }
-interface ArrivalsResult { arrivals: Arrival[]; stopFound: boolean; message?: string; }
-interface AnalysisResult {
-  crowdScore: number; crowdLabel: string; estimatedDuration: string; estimatedWait: string;
-  aiSummary: string; timeline: { time: string; crowd: number }[];
-  departureSuggestions: { time: string; crowd: number }[];
-  tips: { icon: string; tip: string; detail: string }[];
+
+interface ServiceAlert {
+  header: string;
+  description: string;
+  effect: string;
+}
+
+interface Weather {
+  temperature: number;
+  condition: string;
+  isRaining: boolean;
+  isSnowing: boolean;
+  isStormy: boolean;
+  isClear: boolean;
 }
 
 function to12Hour(time: string): string {
@@ -51,14 +64,67 @@ function to12Hour(time: string): string {
   const hour = parseInt(hourStr, 10);
   if (isNaN(hour) || !min) return time;
   const ampm = hour >= 12 ? "PM" : "AM";
-  return `${hour % 12 || 12}:${min} ${ampm}`;
+  const h = hour % 12 || 12;
+  return `${h}:${min} ${ampm}`;
 }
-function crowdColor(pct: number) { return pct < 40 ? "var(--green)" : pct < 70 ? "var(--amber)" : "var(--red)"; }
-function crowdLabel(pct: number) { return pct < 30 ? "Light" : pct < 55 ? "Moderate" : pct < 75 ? "Busy" : "Very Crowded"; }
-function getBadgeClass(pct: number, isFirst: boolean, s: Record<string,string>) { return isFirst ? s.badgeBest : pct < 70 ? s.badgeOk : s.badgeBusy; }
-function alertIcon(effect: string) { return effect.includes("NO_SERVICE") ? "🚫" : effect.includes("DELAY") ? "⏱️" : "⚠️"; }
 
-const TIP_ICONS: Record<string, string> = { train: "🚇", clock: "🕐", "map-pin": "📍", star: "⭐", alert: "⚠️" };
+function crowdColor(pct: number) {
+  if (pct < 40) return "var(--green)";
+  if (pct < 70) return "var(--amber)";
+  return "var(--red)";
+}
+
+function crowdLabel(pct: number) {
+  if (pct < 30) return "Light";
+  if (pct < 55) return "Moderate";
+  if (pct < 75) return "Busy";
+  return "Very Crowded";
+}
+
+function getBadgeClass(pct: number, isFirst: boolean, s: Record<string, string>) {
+  if (isFirst) return s.badgeBest;
+  if (pct < 70) return s.badgeOk;
+  return s.badgeBusy;
+}
+
+function alertColor(effect: string) {
+  if (effect.includes("NO_SERVICE") || effect.includes("SUSPENSION")) return "var(--red)";
+  return "var(--amber)";
+}
+
+function alertIcon(effect: string) {
+  if (effect.includes("NO_SERVICE") || effect.includes("SUSPENSION")) return "🚫";
+  if (effect.includes("DELAY")) return "⏱️";
+  return "⚠️";
+}
+
+interface Arrival {
+  line: string;
+  minutes: number;
+  direction: string;
+  destination: string;
+}
+
+interface ArrivalsResult {
+  arrivals: Arrival[];
+  stopFound: boolean;
+  message?: string;
+}
+
+interface AnalysisResult {
+  crowdScore: number;
+  crowdLabel: string;
+  estimatedDuration: string;
+  estimatedWait: string;
+  aiSummary: string;
+  timeline: { time: string; crowd: number }[];
+  departureSuggestions: { time: string; crowd: number }[];
+  tips: { icon: string; tip: string; detail: string }[];
+}
+
+const TIP_ICONS: Record<string, string> = {
+  train: "🚇", clock: "🕐", "map-pin": "📍", star: "⭐", alert: "⚠️",
+};
 
 export default function Home() {
   const [transit, setTransit] = useState("subway");
@@ -76,17 +142,17 @@ export default function Home() {
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   const [saveMsg, setSaveMsg] = useState("");
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [notifStatus, setNotifStatus] = useState<"default"|"granted"|"denied">("default");
+  const [notifStatus, setNotifStatus] = useState<"default" | "granted" | "denied">("default");
 
   useEffect(() => {
     const now = new Date();
-    setTime(`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
+    setTime(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
     setDay(DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1]);
     const saved = localStorage.getItem("clearcommute_profiles");
     if (saved) setProfiles(JSON.parse(saved));
     fetch("/api/weather").then(r => r.json()).then(d => { if (d.temperature) setWeather(d); });
     if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifStatus(Notification.permission as "default"|"granted"|"denied");
+      setNotifStatus(Notification.permission as "default" | "granted" | "denied");
     }
   }, []);
 
@@ -96,12 +162,15 @@ export default function Home() {
     }
   }, []);
 
-  function handleTransitChange(val: string) { setTransit(val); setLine(LINES[val][0]); }
+  function handleTransitChange(val: string) {
+    setTransit(val);
+    setLine(LINES[val][0]);
+  }
 
   async function subscribeToNotifications() {
     try {
       const permission = await Notification.requestPermission();
-      setNotifStatus(permission as "default"|"granted"|"denied");
+      setNotifStatus(permission as "default" | "granted" | "denied");
       if (permission !== "granted") return;
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
@@ -113,22 +182,35 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription: sub, profile: profiles[0] || null }),
       });
-    } catch (err) { console.error("Subscribe error:", err); }
+    } catch (err) {
+      console.error("Subscribe error:", err);
+    }
   }
 
   function saveProfile() {
     const name = `${line} · ${origin || "?"} → ${dest || "?"} · ${to12Hour(time)}`;
-    const profile: SavedProfile = { id: Date.now().toString(), name, transit, line, origin, dest, time, day, purpose };
+    const profile: SavedProfile = {
+      id: Date.now().toString(),
+      name, transit, line, origin, dest, time, day, purpose,
+    };
     const updated = [profile, ...profiles].slice(0, 5);
     setProfiles(updated);
     localStorage.setItem("clearcommute_profiles", JSON.stringify(updated));
-    setSaveMsg("Saved!"); setTimeout(() => setSaveMsg(""), 2000);
+    setSaveMsg("Saved!");
+    setTimeout(() => setSaveMsg(""), 2000);
   }
 
   function loadProfile(p: SavedProfile) {
-    setTransit(p.transit); setLine(p.line); setOrigin(p.origin); setDest(p.dest);
-    setTime(p.time); setDay(p.day); setPurpose(p.purpose);
-    setResult(null); setArrivals(null); setAlerts([]);
+    setTransit(p.transit);
+    setLine(p.line);
+    setOrigin(p.origin);
+    setDest(p.dest);
+    setTime(p.time);
+    setDay(p.day);
+    setPurpose(p.purpose);
+    setResult(null);
+    setArrivals(null);
+    setAlerts([]);
     setTimeout(() => runAnalysis(p.transit, p.line, p.origin, p.dest, p.time, p.day, p.purpose), 100);
   }
 
@@ -139,35 +221,68 @@ export default function Home() {
   }
 
   async function runAnalysis(t: string, l: string, o: string, d: string, tm: string, dy: string, pu: string) {
-    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]);
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setArrivals(null);
+    setAlerts([]);
+
     try {
       const requests: Promise<unknown>[] = [
-        fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ transit: t, line: l, origin: o, dest: d, time: tm, day: dy, purpose: pu, weather }) }).then(r => r.json()),
+        fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transit: t, line: l, origin: o, dest: d, time: tm, day: dy, purpose: pu, weather }),
+        }).then(r => r.json()),
       ];
+
       if (t === "subway") {
-        requests.push(fetch("/api/arrivals", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ line: l, station: o }) }).then(r => r.json()));
-        requests.push(fetch("/api/alerts", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ line: l }) }).then(r => r.json()));
+        requests.push(
+          fetch("/api/arrivals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ line: l, station: o }),
+          }).then(r => r.json())
+        );
+        requests.push(
+          fetch("/api/alerts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ line: l }),
+          }).then(r => r.json())
+        );
       }
+
       const results = await Promise.allSettled(requests);
+
       if (results[0].status === "fulfilled") {
         const data = results[0].value as AnalysisResult & { error?: string };
         if (data.error) throw new Error(data.error);
         setResult(data);
-      } else throw new Error("Analysis failed");
-      if (results[1]?.status === "fulfilled") setArrivals(results[1].value as ArrivalsResult);
+      } else {
+        throw new Error("Analysis failed");
+      }
+
+      if (results[1]?.status === "fulfilled") {
+        setArrivals(results[1].value as ArrivalsResult);
+      }
+
       if (results[2]?.status === "fulfilled") {
         const alertData = results[2].value as { alerts: ServiceAlert[] };
         setAlerts(alertData.alerts || []);
       }
-    } catch (err) { setError(err instanceof Error ? err.message : "Something went wrong"); }
-    finally { setLoading(false); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function analyze() { runAnalysis(transit, line, origin, dest, time, day, purpose); }
-  const maxCrowd = result ? Math.max(...result.timeline.map(t => t.crowd), 1) : 1;
+  function analyze() {
+    runAnalysis(transit, line, origin, dest, time, day, purpose);
+  }
+
+  const maxCrowd = result ? Math.max(...result.timeline.map((t) => t.crowd), 1) : 1;
 
   return (
     <main className={styles.main}>
@@ -179,22 +294,23 @@ export default function Home() {
               <h1 className={styles.title}>ClearCommute</h1>
               <p className={styles.subtitle}>
                 AI-powered MTA crowd intelligence • Live arrivals
-                {weather && <span className={styles.weatherBadge}>{weather.isRaining ? "🌧️" : weather.isSnowing ? "❄️" : weather.isStormy ? "⛈️" : weather.isClear ? "☀️" : "🌤️"} {weather.temperature}°F · {weather.condition}</span>}
+                {weather && (
+                  <span className={styles.weatherBadge}>
+                    {weather.isRaining ? "🌧️" : weather.isSnowing ? "❄️" : weather.isStormy ? "⛈️" : weather.isClear ? "☀️" : "🌤️"}
+                    {" "}{weather.temperature}°F · {weather.condition}
+                  </span>
+                )}
               </p>
             </div>
-            <button
-              className={styles.notifBtn}
-              onClick={() => {
-                if (notifStatus === "granted") {
-                  alert("To turn off notifications, go to your browser settings and block notifications for clearcommute.vercel.app");
-                } else {
-                  subscribeToNotifications();
-                }
-              }}
-              title={notifStatus === "granted" ? "Notifications on — click for settings" : "Enable notifications"}
-            >
-              {notifStatus === "granted" ? "🔔" : "🔕"}
-            </button>
+            {typeof window !== "undefined" && "Notification" in window && (
+              <button
+                className={styles.notifBtn}
+                onClick={subscribeToNotifications}
+                title={notifStatus === "granted" ? "Notifications on" : "Enable notifications"}
+              >
+                {notifStatus === "granted" ? "🔔" : "🔕"}
+              </button>
+            )}
           </div>
         </header>
 
@@ -287,9 +403,11 @@ export default function Home() {
           <section className={styles.alertsCard}>
             <h2 className={styles.sectionLabel}>⚠️ Service alerts — {line} train</h2>
             {alerts.map((a, i) => (
-              <div key={i} className={styles.alertItem}>
+              <div key={i} className={styles.alertItem} style={{ borderLeftColor: alertColor(a.effect) }}>
                 <div className={styles.alertHeader}>{alertIcon(a.effect)} {a.header}</div>
-                {a.description && <div className={styles.alertDesc}>{a.description.slice(0, 200)}</div>}
+                {a.description && (
+                  <div className={styles.alertDesc}>{a.description.slice(0, 200)}{a.description.length > 200 ? "..." : ""}</div>
+                )}
               </div>
             ))}
           </section>
@@ -301,7 +419,7 @@ export default function Home() {
               Live arrivals — {line} at {origin || "your station"}
               <span className={styles.liveBadge}>● LIVE</span>
             </h2>
-            {!arrivals.stopFound && <p className={styles.mutedNote}>{arrivals.message || "Station not found."}</p>}
+            {!arrivals.stopFound && <p className={styles.mutedNote}>{arrivals.message || "Station not found in database."}</p>}
             {arrivals.stopFound && arrivals.arrivals.length === 0 && <p className={styles.mutedNote}>No upcoming trains in the next 60 minutes.</p>}
             {arrivals.stopFound && arrivals.arrivals.length > 0 && (
               <div className={styles.arrivalsList}>
@@ -310,7 +428,10 @@ export default function Home() {
                     <span className={styles.lineBullet} style={{ background: LINE_COLORS[arr.line] || "#555" }}>{arr.line}</span>
                     <span className={styles.arrivalDir}>{arr.direction}</span>
                     <span className={styles.arrivalTime}>{arr.minutes === 0 ? "Now" : `${arr.minutes} min`}</span>
-                    <div className={styles.arrivalBar} style={{ width: `${Math.min(100,(arr.minutes/15)*100)}%`, background: arr.minutes <= 2 ? "var(--green)" : arr.minutes <= 8 ? "var(--amber)" : "var(--border-strong)" }} />
+                    <div className={styles.arrivalBar} style={{
+                      width: `${Math.min(100, (arr.minutes / 15) * 100)}%`,
+                      background: arr.minutes <= 2 ? "var(--green)" : arr.minutes <= 8 ? "var(--amber)" : "var(--border-strong)",
+                    }} />
                   </div>
                 ))}
               </div>
@@ -323,11 +444,22 @@ export default function Home() {
             <section className={styles.card}>
               <h2 className={styles.sectionLabel}>Crowd forecast — {line} at {to12Hour(time)}</h2>
               <div className={styles.metricGrid}>
-                <div className={styles.metric}><div className={styles.metricLabel}>Crowd level</div><div className={styles.metricValue} style={{ color: crowdColor(result.crowdScore) }}>{result.crowdScore}%</div></div>
-                <div className={styles.metric}><div className={styles.metricLabel}>Est. duration</div><div className={styles.metricValue}>{result.estimatedDuration}</div></div>
-                <div className={styles.metric}><div className={styles.metricLabel}>Est. wait</div><div className={styles.metricValue}>{result.estimatedWait}</div></div>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Crowd level</div>
+                  <div className={styles.metricValue} style={{ color: crowdColor(result.crowdScore) }}>{result.crowdScore}%</div>
+                </div>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Est. duration</div>
+                  <div className={styles.metricValue}>{result.estimatedDuration}</div>
+                </div>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Est. wait</div>
+                  <div className={styles.metricValue}>{result.estimatedWait}</div>
+                </div>
               </div>
-              <div className={styles.crowdBar}><div className={styles.crowdFill} style={{ width: `${result.crowdScore}%`, background: crowdColor(result.crowdScore) }} /></div>
+              <div className={styles.crowdBar}>
+                <div className={styles.crowdFill} style={{ width: `${result.crowdScore}%`, background: crowdColor(result.crowdScore) }} />
+              </div>
               <p className={styles.aiSummary}>{result.aiSummary}</p>
               <h3 className={styles.sectionLabelSm}>Crowd pattern — 2 hour window</h3>
               <div className={styles.timeline}>
@@ -336,7 +468,8 @@ export default function Home() {
                   return (
                     <div key={i} className={styles.timeSlot}>
                       <div className={styles.barWrap}>
-                        <div className={`${styles.bar} ${i === 3 ? styles.barActive : ""}`} style={{ height: `${h}px`, background: crowdColor(slot.crowd) }} />
+                        <div className={`${styles.bar} ${i === 3 ? styles.barActive : ""}`}
+                          style={{ height: `${h}px`, background: crowdColor(slot.crowd) }} />
                       </div>
                       <div className={styles.timeLabel}>{slot.time}</div>
                     </div>
@@ -351,8 +484,12 @@ export default function Home() {
                 {result.departureSuggestions.map((dep, i) => (
                   <div key={i} className={`${styles.departOption} ${i === 0 ? styles.departBest : ""}`}>
                     <div className={styles.departTime}>{dep.time}</div>
-                    <div className={styles.departCrowd} style={{ color: crowdColor(dep.crowd) }}>{crowdLabel(dep.crowd)}</div>
-                    <div className={`${styles.badge} ${getBadgeClass(dep.crowd, i === 0, styles)}`}>{i === 0 ? "✓ Recommended" : crowdLabel(dep.crowd)}</div>
+                    <div className={styles.departCrowd} style={{ color: crowdColor(dep.crowd) }}>
+                      {crowdLabel(dep.crowd)}
+                    </div>
+                    <div className={`${styles.badge} ${getBadgeClass(dep.crowd, i === 0, styles)}`}>
+                      {i === 0 ? "✓ Recommended" : crowdLabel(dep.crowd)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -363,7 +500,10 @@ export default function Home() {
               {result.tips.map((tip, i) => (
                 <div key={i} className={styles.tipItem}>
                   <span className={styles.tipIcon}>{TIP_ICONS[tip.icon] || "💡"}</span>
-                  <div><div className={styles.tipText}>{tip.tip}</div><div className={styles.tipDetail}>{tip.detail}</div></div>
+                  <div>
+                    <div className={styles.tipText}>{tip.tip}</div>
+                    <div className={styles.tipDetail}>{tip.detail}</div>
+                  </div>
                 </div>
               ))}
             </section>
