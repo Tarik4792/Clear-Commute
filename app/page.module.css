@@ -257,7 +257,12 @@
 .departGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
+}
+
+@media (max-width: 420px) {
+  .departGrid { grid-template-columns: 1fr; gap: 8px; }
+  .departTime { font-size: 16px; }
 }
 
 .departOption {
@@ -335,3 +340,5 @@
   color: var(--text-muted);
   margin-top: 3px;
 }
+
+.timeSlot { flex: 0 0 72px; text-align: center; }
