@@ -198,7 +198,7 @@ export default function Home() {
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub, profile: profiles[0] || null }),
+        body: JSON.stringify({ subscription: sub, userId: user?.id || null }),
       });
     } catch (err) { console.error("Subscribe error:", err); }
   }
