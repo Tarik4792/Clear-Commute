@@ -479,3 +479,12 @@
   text-transform: none;
   letter-spacing: 0;
 }
+.heatmapInsights { display: flex; gap: 16px; margin-bottom: 16px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+.heatmapGrid { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.heatmapLabels { display: grid; grid-template-columns: 32px repeat(24, 1fr); gap: 2px; margin-bottom: 2px; padding-left: 36px; }
+.heatmapHourLabel { font-size: 9px; color: var(--text-faint); text-align: center; min-width: 20px; }
+.heatmapRow { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+.heatmapDayLabel { font-size: 11px; color: var(--text-muted); width: 32px; flex-shrink: 0; }
+.heatmapCells { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; flex: 1; }
+.heatmapCell { height: 20px; border-radius: 2px; min-width: 20px; cursor: default; transition: opacity 0.2s; }
+.heatmapCell:hover { opacity: 1 !important; }

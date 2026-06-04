@@ -74,6 +74,13 @@ export default function Home() {
   const [arrivals, setArrivals] = useState<ArrivalsResult | null>(null);
   const [alerts, setAlerts] = useState<ServiceAlert[]>([]);
   const [error, setError] = useState("");
+  const [heatmap, setHeatmap] = useState<{
+    heatmap: Record<string, number[]>;
+    peakDay: string;
+    peakHour: string;
+    lightestDay: string;
+    lightestHour: string;
+  } | null>(null);
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   const [saveMsg, setSaveMsg] = useState("");
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -250,8 +257,14 @@ export default function Home() {
   }
 
   async function runAnalysis(t: string, l: string, o: string, d: string, tm: string, dy: string, pu: string) {
-    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]);
+    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]); setHeatmap(null);
     try {
+      fetch("/api/heatmap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transit: t, line: l, origin: o, dest: d }),
+      }).then(r => r.json()).then(d => { if (d.heatmap) setHeatmap(d); }).catch(console.error);
+
       const requests: Promise<unknown>[] = [
         fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ transit: t, line: l, origin: o, dest: d, time: tm, day: dy, purpose: pu, weather }) }).then(r => r.json()),
@@ -517,6 +530,44 @@ export default function Home() {
                 </div>
               ))}
             </section>
+
+            {heatmap && (
+              <section className={styles.card}>
+                <h2 className={styles.sectionLabel}>Weekly crowd heatmap — {line} line</h2>
+                <div className={styles.heatmapInsights}>
+                  <span>🔴 Busiest: {heatmap.peakDay} {heatmap.peakHour}</span>
+                  <span>🟢 Lightest: {heatmap.lightestDay} {heatmap.lightestHour}</span>
+                </div>
+                <div className={styles.heatmapGrid}>
+                  <div className={styles.heatmapLabels}>
+                    {["12a","1a","2a","3a","4a","5a","6a","7a","8a","9a","10a","11a","12p","1p","2p","3p","4p","5p","6p","7p","8p","9p","10p","11p"].map(h => (
+                      <div key={h} className={styles.heatmapHourLabel}>{h}</div>
+                    ))}
+                  </div>
+                  {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(day => (
+                    <div key={day} className={styles.heatmapRow}>
+                      <div className={styles.heatmapDayLabel}>{day.slice(0,3)}</div>
+                      <div className={styles.heatmapCells}>
+                        {(heatmap.heatmap[day] || []).map((val, i) => (
+                          <div
+                            key={i}
+                            className={styles.heatmapCell}
+                            title={`${day} ${i}:00 — ${val}% crowded`}
+                            style={{
+                              background: val < 20 ? "var(--green)" :
+                                val < 45 ? "#7bc67e" :
+                                val < 65 ? "var(--amber)" :
+                                val < 80 ? "#e8834a" : "var(--red)",
+                              opacity: val < 5 ? 0.15 : 0.3 + (val / 100) * 0.7,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>
