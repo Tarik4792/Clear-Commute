@@ -108,6 +108,7 @@ export default function Home() {
   const [authPassword, setAuthPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -146,6 +147,23 @@ export default function Home() {
       }));
       setProfiles(mapped);
     }
+  }
+
+  async function handleForgotPassword() {
+    if (!authEmail) { setAuthError("Enter your email first"); return; }
+    setAuthLoading(true); setAuthError("");
+    try {
+      const res = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setForgotSent(true);
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Failed to send reset email");
+    } finally { setAuthLoading(false); }
   }
 
   async function handleAuth() {
@@ -344,6 +362,16 @@ export default function Home() {
                 onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}>
                 {authMode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
               </button>
+              {authMode === "signin" && !forgotSent && (
+                <button className={styles.authToggle} onClick={handleForgotPassword} disabled={authLoading}>
+                  Forgot password?
+                </button>
+              )}
+              {forgotSent && (
+                <p style={{ textAlign: "center", fontSize: 13, color: "var(--green)", marginTop: 8 }}>
+                  ✓ Reset email sent! Check your inbox.
+                </p>
+              )}
             </div>
           </div>
         )}
