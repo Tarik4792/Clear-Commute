@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 
 const LINES: Record<string, string[]> = {
   subway: ["1","2","3","4","5","6","7","A","C","E","B","D","F","M","G","J","Z","L","N","Q","R","W","S"],
-  bus: ["M1","M2","M3","M4","M5","M7","M9","M10","M11","M14","M15","M20","M22","M23","M31","M34","M42","M50","M57","M60","M66","M72","M79","M86","M96","M98","M99","M100","M101","M102","M103","M104","M106","M116","Bx1","Bx2","Bx3","Bx4","Q1","Q2","Q3","Q4","B1","B2","B3","B6","B9","B10"],
+  bus: ["M1","M2","M3","M4","M5","M7","M9","M10","M11","M14","M15","M20","M22","M23","M31","M34","M42","M50","M57","M60","M66","M72","M79","M86","M96","M98","M99","M100","M101","M102","M103","M104","M106","M116","Bx1","Bx2","Bx3","Bx4","Bx5","Bx6","Bx7","Bx8","Bx9","Bx10","Bx11","Bx12","Bx13","Bx15","Bx16","Bx17","Bx18","Bx19","Bx20","Bx21","Bx22","Bx23","Bx24","Bx25","Bx26","Bx27","Bx28","Bx29","Bx30","Bx31","Bx32","Bx33","Bx34","Bx35","Bx36","Bx38","Bx39","Bx40","Bx41","Bx42","Q1","Q2","Q3","Q4","B1","B2","B3","B6","B9","B10"],
   lirr: ["Port Washington","Babylon","Ronkonkoma","Montauk","Oyster Bay","Long Beach","Far Rockaway","Hempstead","West Hempstead","Port Jefferson"],
   mnr: ["Hudson","Harlem","New Haven","Pascack Valley","Port Jervis"],
   sir: ["Main Line"],
