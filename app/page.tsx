@@ -74,6 +74,11 @@ export default function Home() {
   const [arrivals, setArrivals] = useState<ArrivalsResult | null>(null);
   const [alerts, setAlerts] = useState<ServiceAlert[]>([]);
   const [error, setError] = useState("");
+  const [busArrivals, setBusArrivals] = useState<{
+    arrivals: { route: string; destination: string; minutes: number | null; presentable: string }[];
+    stopName: string;
+  } | null>(null);
+  const [busLoading, setBusLoading] = useState(false);
   const [heatmap, setHeatmap] = useState<{
     heatmap: Record<string, number[]>;
     peakDay: string;
@@ -257,7 +262,7 @@ export default function Home() {
   }
 
   async function runAnalysis(t: string, l: string, o: string, d: string, tm: string, dy: string, pu: string) {
-    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]); setHeatmap(null);
+    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]); setHeatmap(null); setBusArrivals(null);
     try {
       fetch("/api/heatmap", {
         method: "POST",
@@ -288,6 +293,23 @@ export default function Home() {
       }
     } catch (err) { setError(err instanceof Error ? err.message : "Something went wrong"); }
     finally { setLoading(false); }
+  }
+
+  async function fetchBusLocation() {
+    if (!navigator.geolocation) return;
+    setBusLoading(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const res = await fetch("/api/bus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ route: line, lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        });
+        const data = await res.json();
+        if (data.arrivals) setBusArrivals(data);
+      } catch (err) { console.error("Bus fetch error:", err); }
+      finally { setBusLoading(false); }
+    }, () => setBusLoading(false));
   }
 
   function analyze() { runAnalysis(transit, line, origin, dest, time, day, purpose); }
@@ -434,6 +456,11 @@ export default function Home() {
               {saveMsg || "Save commute"}
             </button>
           </div>
+          {transit === "bus" && (
+            <button className={styles.busBtn} onClick={fetchBusLocation} disabled={busLoading}>
+              {busLoading ? "Finding nearest stop..." : "📍 Live bus arrivals near me"}
+            </button>
+          )}
         </section>
 
         {error && <div className={styles.errorBox}><strong>Error:</strong> {error}</div>}
@@ -455,6 +482,30 @@ export default function Home() {
                 <div className={styles.alertHeader}>{alertIcon(a.effect)} {a.header}</div>
               </div>
             ))}
+          </section>
+        )}
+
+        {busArrivals && transit === "bus" && !loading && (
+          <section className={styles.card}>
+            <h2 className={styles.sectionLabel}>
+              🚌 Live bus arrivals — {line}
+              <span className={styles.liveBadge}>● LIVE</span>
+            </h2>
+            <p className={styles.mutedNote} style={{ marginBottom: 12 }}>Nearest stop: {busArrivals.stopName}</p>
+            {busArrivals.arrivals.length === 0 && <p className={styles.mutedNote}>No buses in the next 60 minutes.</p>}
+            <div className={styles.arrivalsList}>
+              {busArrivals.arrivals.map((arr, i) => (
+                <div key={i} className={styles.arrivalRow}>
+                  <span className={styles.lineBullet} style={{ background: "#FF6319", fontSize: 10 }}>{arr.route}</span>
+                  <span className={styles.arrivalDir}>{arr.destination}</span>
+                  <span className={styles.arrivalTime}>{arr.presentable}</span>
+                  <div className={styles.arrivalBar} style={{
+                    width: arr.minutes !== null ? `${Math.min(100,(arr.minutes/15)*100)}%` : "50%",
+                    background: (arr.minutes || 0) <= 2 ? "var(--green)" : (arr.minutes || 0) <= 8 ? "var(--amber)" : "var(--border-strong)",
+                  }} />
+                </div>
+              ))}
+            </div>
           </section>
         )}
 
