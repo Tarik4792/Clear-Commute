@@ -773,8 +773,8 @@ export default function Home() {
                 {shareCopied ? "✓ Link copied!" : "📤 Share this report"}
               </button>
 
-              {/* Community crowd reports */}
-              <div className={styles.communitySection}>
+              {/* Community crowd reports - hidden here, shown in own card below */}
+              <div style={{display:"none"}}>
                 <div className={styles.communityHeader}>
                   <span className={styles.sectionLabelSm}>🤝 Community reports</span>
                   {!showReportForm && !reportSubmitted && (
@@ -852,6 +852,46 @@ export default function Home() {
                   <div><div className={styles.tipText}>{tip.tip}</div><div className={styles.tipDetail}>{tip.detail}</div></div>
                 </div>
               ))}
+            </section>
+
+            <section className={styles.card}>
+              <div className={styles.communityHeader}>
+                <h2 className={styles.sectionLabel}>🤝 Community reports — {line} train</h2>
+                {!showReportForm && !reportSubmitted && (
+                  <button className={styles.reportBtn} onClick={() => setShowReportForm(true)}>
+                    + Report crowd
+                  </button>
+                )}
+                {reportSubmitted && <span className={styles.reportThanks}>✓ Thanks!</span>}
+              </div>
+              {crowdReports && crowdReports.count > 0 ? (
+                <div className={styles.communityBadge}>
+                  <span className={styles.communityDot} style={{
+                    background: (crowdReports.avgScore || 0) < 40 ? "var(--green)" :
+                      (crowdReports.avgScore || 0) < 70 ? "var(--amber)" : "var(--red)"
+                  }}>●</span>
+                  <span>{crowdReports.count} rider{crowdReports.count !== 1 ? "s" : ""} reporting <strong>{crowdReports.topLevel}</strong> right now</span>
+                </div>
+              ) : (
+                <p className={styles.noReports}>No reports yet — be the first! 👆</p>
+              )}
+              {showReportForm && (
+                <div className={styles.reportForm}>
+                  <div className={styles.reportLevels}>
+                    {["Light","Moderate","Busy","Very Crowded"].map(level => (
+                      <button key={level}
+                        className={`${styles.reportLevel} ${reportLevel === level ? styles.reportLevelActive : ""}`}
+                        onClick={() => setReportLevel(level)}>
+                        {level === "Light" ? "🟢" : level === "Moderate" ? "🟡" : level === "Busy" ? "🟠" : "🔴"} {level}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={styles.btnRow} style={{ marginTop: 10 }}>
+                    <button className={styles.analyzeBtn} onClick={submitCrowdReport}>Submit report</button>
+                    <button className={styles.saveBtn} onClick={() => setShowReportForm(false)}>Cancel</button>
+                  </div>
+                </div>
+              )}
             </section>
 
             {heatmap && (
