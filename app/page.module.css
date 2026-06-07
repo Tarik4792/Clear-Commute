@@ -1015,3 +1015,13 @@
   background: rgba(0,57,166,0.1);
   color: var(--text);
 }
+
+.noReports {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: var(--surface-raised);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-strong);
+  text-align: center;
+}

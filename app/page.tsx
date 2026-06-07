@@ -795,7 +795,7 @@ export default function Home() {
                     <span>{crowdReports.count} rider{crowdReports.count !== 1 ? "s" : ""} reporting <strong>{crowdReports.topLevel}</strong> right now</span>
                   </div>
                 ) : (
-                  <p className={styles.mutedNote}>No community reports yet — be the first!</p>
+                  <p className={styles.noReports}>No reports yet — be the first! 👆</p>
                 )}
                 {showReportForm && (
                   <div className={styles.reportForm}>
