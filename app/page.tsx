@@ -82,6 +82,8 @@ export default function Home() {
   } | null>(null);
   const [busLoading, setBusLoading] = useState(false);
   const [expandedProfile, setExpandedProfile] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const [heatmap, setHeatmap] = useState<{
     heatmap: Record<string, number[]>;
     peakDay: string;
@@ -324,6 +326,30 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id, commuteId: id, notify_departure, notify_days }),
     });
+  }
+
+  async function shareReport() {
+    if (!result) return;
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          line, origin, dest, time, day,
+          crowdScore: result.crowdScore,
+          crowdLabel: result.crowdLabel,
+          aiSummary: result.aiSummary,
+          departureSuggestions: result.departureSuggestions,
+        }),
+      });
+      const data = await res.json();
+      if (data.shareUrl) {
+        setShareUrl(data.shareUrl);
+        await navigator.clipboard.writeText(data.shareUrl);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 3000);
+      }
+    } catch (err) { console.error("Share error:", err); }
   }
 
   async function fetchBusLocation() {
@@ -623,6 +649,9 @@ export default function Home() {
               </div>
               <div className={styles.crowdBar}><div className={styles.crowdFill} style={{ width: `${result.crowdScore}%`, background: crowdColor(result.crowdScore) }} /></div>
               <p className={styles.aiSummary}>{result.aiSummary}</p>
+              <button className={styles.shareBtn} onClick={shareReport}>
+                {shareCopied ? "✓ Link copied!" : "📤 Share this report"}
+              </button>
               <h3 className={styles.sectionLabelSm}>Crowd pattern — 2 hour window</h3>
               <div className={styles.timeline}>
                 {result.timeline.map((slot, i) => {

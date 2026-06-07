@@ -821,3 +821,18 @@
   text-align: center;
   margin-top: 4px;
 }
+
+.shareBtn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: 1.25rem;
+  transition: all 0.15s;
+}
+.shareBtn:hover { background: var(--surface-raised); color: var(--text); }
