@@ -34,6 +34,8 @@ const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sun
 interface SavedProfile {
   id: string; name: string; transit: string; line: string;
   origin: string; dest: string; time: string; day: string; purpose: string;
+  notify_departure?: boolean;
+  notify_days?: string[];
 }
 interface ServiceAlert { header: string; description: string; effect: string; }
 interface Weather { temperature: number; condition: string; isRaining: boolean; isSnowing: boolean; isStormy: boolean; isClear: boolean; }
@@ -79,6 +81,7 @@ export default function Home() {
     stopName: string;
   } | null>(null);
   const [busLoading, setBusLoading] = useState(false);
+  const [expandedProfile, setExpandedProfile] = useState<string | null>(null);
   const [heatmap, setHeatmap] = useState<{
     heatmap: Record<string, number[]>;
     peakDay: string;
@@ -313,6 +316,16 @@ export default function Home() {
     finally { setLoading(false); }
   }
 
+  async function updateNotifPrefs(id: string, notify_departure: boolean, notify_days: string[]) {
+    if (!user) return;
+    setProfiles(prev => prev.map(p => p.id === id ? { ...p, notify_departure, notify_days } : p));
+    await fetch("/api/commutes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, commuteId: id, notify_departure, notify_days }),
+    });
+  }
+
   async function fetchBusLocation() {
     if (!navigator.geolocation) return;
     setBusLoading(true);
@@ -417,12 +430,51 @@ export default function Home() {
             </h2>
             <div className={styles.profilesList}>
               {profiles.map(p => (
-                <div key={p.id} className={styles.profileRow}>
-                  <button className={styles.profileBtn} onClick={() => loadProfile(p)}>
-                    <span className={styles.profileBullet} style={{ background: LINE_COLORS[p.line] || "#555" }}>{p.line}</span>
-                    <span className={styles.profileName}>{p.name}</span>
-                  </button>
-                  <button className={styles.profileDelete} onClick={() => deleteProfile(p.id)}>✕</button>
+                <div key={p.id} className={styles.profileCard}>
+                  <div className={styles.profileRow}>
+                    <button className={styles.profileBtn} onClick={() => loadProfile(p)}>
+                      <span className={styles.profileBullet} style={{ background: LINE_COLORS[p.line] || "#555" }}>{p.line}</span>
+                      <span className={styles.profileName}>{p.name}</span>
+                    </button>
+                    <button className={styles.profileNotifToggle}
+                      onClick={() => setExpandedProfile(expandedProfile === p.id ? null : p.id)}
+                      title="Notification preferences">
+                      {p.notify_departure !== false ? "🔔" : "🔕"}
+                    </button>
+                    <button className={styles.profileDelete} onClick={() => deleteProfile(p.id)}>✕</button>
+                  </div>
+                  {expandedProfile === p.id && user && (
+                    <div className={styles.notifPrefs}>
+                      <div className={styles.notifPrefRow}>
+                        <span className={styles.notifPrefLabel}>Departure reminders</span>
+                        <button
+                          className={`${styles.notifToggleBtn} ${p.notify_departure !== false ? styles.notifToggleOn : styles.notifToggleOff}`}
+                          onClick={() => updateNotifPrefs(p.id, !p.notify_departure, p.notify_days || ["Monday","Tuesday","Wednesday","Thursday","Friday"])}
+                        >
+                          {p.notify_departure !== false ? "ON" : "OFF"}
+                        </button>
+                      </div>
+                      {p.notify_departure !== false && (
+                        <div className={styles.notifDays}>
+                          {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d, i) => {
+                            const full = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][i];
+                            const active = (p.notify_days || ["Monday","Tuesday","Wednesday","Thursday","Friday"]).includes(full);
+                            return (
+                              <button key={d}
+                                className={`${styles.dayBtn} ${active ? styles.dayBtnActive : ""}`}
+                                onClick={() => {
+                                  const days = p.notify_days || ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+                                  const newDays = active ? days.filter(x => x !== full) : [...days, full];
+                                  updateNotifPrefs(p.id, true, newDays);
+                                }}
+                              >{d}</button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {!user && <p className={styles.notifPrefHint}>Sign in to enable reminders</p>}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

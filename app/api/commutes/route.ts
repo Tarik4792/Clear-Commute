@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
         depart_time: commute.time,
         day: commute.day,
         purpose: commute.purpose,
+        notify_departure: true,
+        notify_days: ["Monday","Tuesday","Wednesday","Thursday","Friday"],
       })
       .select()
       .single();
@@ -48,6 +50,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ commute: data });
   } catch (err) {
     return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const { userId, commuteId, notify_departure, notify_days } = await req.json();
+    if (!userId || !commuteId) return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    const { error } = await getClient()
+      .from("saved_commutes")
+      .update({ notify_departure, notify_days })
+      .eq("id", commuteId)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 }
 
