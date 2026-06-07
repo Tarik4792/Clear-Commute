@@ -84,6 +84,14 @@ export default function Home() {
   const [expandedProfile, setExpandedProfile] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [score, setScore] = useState<{
+    score: number; grade: string; label: string; emoji: string;
+    totalTrips: number; beatRushCount: number; autoScore: number;
+  } | null>(null);
+  const [showLogTrip, setShowLogTrip] = useState(false);
+  const [tripCrowd, setTripCrowd] = useState(50);
+  const [tripBeatRush, setTripBeatRush] = useState(false);
+  const [tripLogging, setTripLogging] = useState(false);
   const [heatmap, setHeatmap] = useState<{
     heatmap: Record<string, number[]>;
     peakDay: string;
@@ -195,6 +203,7 @@ export default function Home() {
             localStorage.removeItem("clearcommute_profiles");
           }
           await loadCloudProfiles(data.user.id);
+      loadScore(data.user.id);
         }
       } else {
         const { data, error } = await getSupabase().auth.signInWithPassword({ email: authEmail, password: authPassword });
@@ -316,6 +325,32 @@ export default function Home() {
       }
     } catch (err) { setError(err instanceof Error ? err.message : "Something went wrong"); }
     finally { setLoading(false); }
+  }
+
+  async function loadScore(userId: string) {
+    const res = await fetch("/api/score", { headers: { "x-user-id": userId } });
+    const data = await res.json();
+    if (data.score !== undefined) setScore(data);
+  }
+
+  async function logTrip() {
+    if (!user) return;
+    setTripLogging(true);
+    try {
+      await fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          line, origin, dest,
+          crowd_reported: tripCrowd,
+          beat_rush: tripBeatRush,
+        }),
+      });
+      setShowLogTrip(false);
+      await loadScore(user.id);
+    } catch (err) { console.error("Log trip error:", err); }
+    finally { setTripLogging(false); }
   }
 
   async function updateNotifPrefs(id: string, notify_departure: boolean, notify_days: string[]) {
@@ -507,6 +542,34 @@ export default function Home() {
           </section>
         )}
 
+        {user && score && (
+          <section className={styles.card}>
+            <h2 className={styles.sectionLabel}>Your commute score</h2>
+            <div className={styles.scoreRow}>
+              <div className={styles.scoreBig}>
+                <span className={styles.scoreEmoji}>{score.emoji}</span>
+                <span className={styles.scoreGrade}>{score.grade}</span>
+                <span className={styles.scoreValue}>{score.score}</span>
+              </div>
+              <div className={styles.scoreInfo}>
+                <div className={styles.scoreLabel}>{score.label}</div>
+                <div className={styles.scoreStats}>
+                  {score.totalTrips > 0 ? (
+                    <span>{score.beatRushCount}/{score.totalTrips} trips beat the rush</span>
+                  ) : (
+                    <span>Log trips to improve your score</span>
+                  )}
+                </div>
+                <div className={styles.scoreMeta}>Auto: {score.autoScore}/100</div>
+              </div>
+            </div>
+            <div className={styles.scoreBarWrap}>
+              <div className={styles.scoreBarFill} style={{ width: `${score.score}%`,
+                background: score.score >= 70 ? "var(--green)" : score.score >= 50 ? "var(--amber)" : "var(--red)" }} />
+            </div>
+          </section>
+        )}
+
         <section className={styles.card}>
           <h2 className={styles.sectionLabel}>Plan your commute</h2>
           <div className={styles.formRow}>
@@ -566,6 +629,37 @@ export default function Home() {
             <button className={styles.busBtn} onClick={fetchBusLocation} disabled={busLoading}>
               {busLoading ? "Finding nearest stop..." : "📍 Live bus arrivals near me"}
             </button>
+          )}
+          {user && result && !showLogTrip && (
+            <button className={styles.busBtn} onClick={() => setShowLogTrip(true)}>
+              📝 Log this trip to update your score
+            </button>
+          )}
+          {showLogTrip && user && (
+            <div className={styles.logTripCard}>
+              <h3 className={styles.logTripTitle}>How was the crowd?</h3>
+              <div className={styles.sliderWrap}>
+                <span style={{ color: "var(--green)", fontSize: 13 }}>Light</span>
+                <input type="range" min={0} max={100} value={tripCrowd}
+                  onChange={e => setTripCrowd(Number(e.target.value))}
+                  className={styles.crowdSlider} />
+                <span style={{ color: "var(--red)", fontSize: 13 }}>Packed</span>
+              </div>
+              <div className={styles.beatRushRow}>
+                <span className={styles.notifPrefLabel}>Did you beat the rush?</span>
+                <button
+                  className={`${styles.notifToggleBtn} ${tripBeatRush ? styles.notifToggleOn : styles.notifToggleOff}`}
+                  onClick={() => setTripBeatRush(!tripBeatRush)}>
+                  {tripBeatRush ? "YES 🎉" : "NO"}
+                </button>
+              </div>
+              <div className={styles.btnRow} style={{ marginTop: 12 }}>
+                <button className={styles.analyzeBtn} onClick={logTrip} disabled={tripLogging}>
+                  {tripLogging ? "Saving..." : "Save trip"}
+                </button>
+                <button className={styles.saveBtn} onClick={() => setShowLogTrip(false)}>Cancel</button>
+              </div>
+            </div>
           )}
         </section>
 

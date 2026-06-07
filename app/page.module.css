@@ -836,3 +836,100 @@
   transition: all 0.15s;
 }
 .shareBtn:hover { background: var(--surface-raised); color: var(--text); }
+
+/* Commute Score */
+.scoreRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.scoreBig {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.scoreEmoji { font-size: 28px; }
+
+.scoreGrade {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -1px;
+}
+
+.scoreValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.scoreInfo { flex: 1; }
+
+.scoreLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.scoreStats {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.scoreMeta {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.scoreBarWrap {
+  height: 6px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.scoreBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+/* Log Trip */
+.logTripCard {
+  background: var(--surface-raised);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.logTripTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.sliderWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.crowdSlider {
+  flex: 1;
+  accent-color: var(--blue);
+}
+
+.beatRushRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
