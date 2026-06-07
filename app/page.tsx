@@ -89,6 +89,10 @@ export default function Home() {
     totalTrips: number; beatRushCount: number; autoScore: number;
   } | null>(null);
   const [showLogTrip, setShowLogTrip] = useState(false);
+  const [crowdReports, setCrowdReports] = useState<{ count: number; avgScore: number | null; topLevel: string | null } | null>(null);
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [reportLevel, setReportLevel] = useState("Moderate");
+  const [reportSubmitted, setReportSubmitted] = useState(false);
   const [tripCrowd, setTripCrowd] = useState(50);
   const [tripBeatRush, setTripBeatRush] = useState(false);
   const [tripLogging, setTripLogging] = useState(false);
@@ -294,7 +298,7 @@ export default function Home() {
   }
 
   async function runAnalysis(t: string, l: string, o: string, d: string, tm: string, dy: string, pu: string) {
-    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]); setHeatmap(null); setBusArrivals(null);
+    setLoading(true); setError(""); setResult(null); setArrivals(null); setAlerts([]); setHeatmap(null); setBusArrivals(null); setCrowdReports(null); setShowReportForm(false); setReportSubmitted(false);
     try {
       fetch("/api/heatmap", {
         method: "POST",
@@ -325,6 +329,28 @@ export default function Home() {
       }
     } catch (err) { setError(err instanceof Error ? err.message : "Something went wrong"); }
     finally { setLoading(false); }
+  }
+
+  async function submitCrowdReport() {
+    const scoreMap: Record<string, number> = { "Light": 20, "Moderate": 50, "Busy": 75, "Very Crowded": 95 };
+    try {
+      await fetch("/api/crowd-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          line, origin, dest,
+          crowd_level: reportLevel,
+          crowd_score: scoreMap[reportLevel] || 50,
+          user_id: user?.id || null,
+        }),
+      });
+      setReportSubmitted(true);
+      setShowReportForm(false);
+      // Refresh reports
+      const res = await fetch(`/api/crowd-reports?line=${encodeURIComponent(line)}`);
+      const data = await res.json();
+      if (data.count !== undefined) setCrowdReports(data);
+    } catch (err) { console.error("Report error:", err); }
   }
 
   async function loadScore(userId: string) {
@@ -746,6 +772,49 @@ export default function Home() {
               <button className={styles.shareBtn} onClick={shareReport}>
                 {shareCopied ? "✓ Link copied!" : "📤 Share this report"}
               </button>
+
+              {/* Community crowd reports */}
+              <div className={styles.communitySection}>
+                <div className={styles.communityHeader}>
+                  <span className={styles.sectionLabelSm}>🤝 Community reports</span>
+                  {!showReportForm && !reportSubmitted && (
+                    <button className={styles.reportBtn} onClick={() => setShowReportForm(true)}>
+                      + Report crowd
+                    </button>
+                  )}
+                  {reportSubmitted && (
+                    <span className={styles.reportThanks}>✓ Thanks for reporting!</span>
+                  )}
+                </div>
+                {crowdReports && crowdReports.count > 0 ? (
+                  <div className={styles.communityBadge}>
+                    <span className={styles.communityDot} style={{
+                      background: (crowdReports.avgScore || 0) < 40 ? "var(--green)" :
+                        (crowdReports.avgScore || 0) < 70 ? "var(--amber)" : "var(--red)"
+                    }}>●</span>
+                    <span>{crowdReports.count} rider{crowdReports.count !== 1 ? "s" : ""} reporting <strong>{crowdReports.topLevel}</strong> right now</span>
+                  </div>
+                ) : (
+                  <p className={styles.mutedNote}>No community reports yet — be the first!</p>
+                )}
+                {showReportForm && (
+                  <div className={styles.reportForm}>
+                    <div className={styles.reportLevels}>
+                      {["Light","Moderate","Busy","Very Crowded"].map(level => (
+                        <button key={level}
+                          className={`${styles.reportLevel} ${reportLevel === level ? styles.reportLevelActive : ""}`}
+                          onClick={() => setReportLevel(level)}>
+                          {level === "Light" ? "🟢" : level === "Moderate" ? "🟡" : level === "Busy" ? "🟠" : "🔴"} {level}
+                        </button>
+                      ))}
+                    </div>
+                    <div className={styles.btnRow} style={{ marginTop: 10 }}>
+                      <button className={styles.analyzeBtn} onClick={submitCrowdReport}>Submit report</button>
+                      <button className={styles.saveBtn} onClick={() => setShowReportForm(false)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <h3 className={styles.sectionLabelSm}>Crowd pattern — 2 hour window</h3>
               <div className={styles.timeline}>
                 {result.timeline.map((slot, i) => {

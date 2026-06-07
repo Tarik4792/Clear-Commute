@@ -933,3 +933,85 @@
   align-items: center;
   justify-content: space-between;
 }
+
+/* Community reports */
+.communitySection {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.communityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.reportBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.reportBtn:hover { background: var(--surface-raised); color: var(--text); }
+
+.reportThanks {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.communityBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: var(--surface-raised);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.communityDot {
+  font-size: 10px;
+  animation: pulse 2s infinite;
+}
+
+.reportForm {
+  margin-top: 10px;
+}
+
+.reportLevels {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.reportLevel {
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface-raised);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.reportLevel:hover { border-color: var(--border-strong); color: var(--text); }
+
+.reportLevelActive {
+  border-color: var(--blue);
+  background: rgba(0,57,166,0.1);
+  color: var(--text);
+}
