@@ -493,7 +493,7 @@ export default function Home() {
             </div>
             <div className={styles.headerActions}>
               {user ? (
-                <button className={styles.authBtn} onClick={handleSignOut} title="Sign out">👤 {user.email?.split("@")[0]}</button>
+                <button className={styles.authBtn} onClick={() => window.location.href = "/settings"} title="Account settings">👤 {user.email?.split("@")[0]}</button>
               ) : (
                 <button className={styles.authBtn} onClick={() => setShowAuth(true)}>Sign in</button>
               )}
