@@ -50,6 +50,12 @@ export default function SettingsPage() {
   return (
     <main style={styles.main}>
       <div style={styles.container}>
+        <button
+          onClick={() => router.back()}
+          style={{ background: 'none', border: 'none', color: '#60a5fa', fontSize: '1rem', cursor: 'pointer', padding: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+        >
+          ← Back
+        </button>
         <h1 style={styles.heading}>Settings</h1>
 
         <button

@@ -933,6 +933,11 @@ export default function Home() {
             )}
           </div>
         )}
+
+        <footer style={{ textAlign: "center", padding: "2rem 1rem 3rem", borderTop: "1px solid #1f2937", marginTop: "2rem" }}>
+          <a href="/privacy" style={{ color: "#64748b", fontSize: 13, textDecoration: "none", marginRight: 16 }}>Privacy Policy</a>
+          <a href="/settings" style={{ color: "#64748b", fontSize: 13, textDecoration: "none" }}>Settings & Account</a>
+        </footer>
       </div>
     </main>
   );
